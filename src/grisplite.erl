@@ -10,6 +10,6 @@
 
 %--- Callbacks -----------------------------------------------------------------
 
-start(_Type, _Args) -> grisplite_sup:start_link().
+start(_Type, _Args) -> grisplite_commander:start_link(node).
 
 stop(_State) -> ok.

@@ -15,6 +15,7 @@ logs
 _build
 .idea
 rebar3.crashdump
+.DS_Store
 
 # GRiSP
 _grisp
