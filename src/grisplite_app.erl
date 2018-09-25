@@ -7,6 +7,8 @@
 
 -behaviour(application).
 
+-include("grisplite.hrl").
+
 %% Application callbacks
 -export([start/2, stop/1]).
 
@@ -21,9 +23,9 @@ start(_StartType, _StartArgs) ->
     {ok, Supervisor} = grisplite:start(node),
     % application:ensure_all_started(os_mon),
     % node_util:set_platform(),
-
+    ?PAUSE3,
     % start_timed_apps(),
-    % start_primary_workers(primary_workers),
+    grisplite_util:start_primary_workers(primary_workers),
     % start_primary_workers(distributed_workers),
 
     LEDs = [1, 2],
@@ -42,3 +44,5 @@ stop(_State) ->
 
 % lasp_peer_service:manager().
 % lasp_peer_service:members().
+% ets:match(node(),'$1').
+% grisplite_util:start_primary_workers(primary_workers).

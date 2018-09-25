@@ -37,7 +37,7 @@ end).
 %%====================================================================
 
 % -define(TIME_MULTIPLIER,      lists:last(tuple_to_list(application:get_env(node, time_multiplier, 1)))).
--define(TIME_MULTIPLIER,          application:get_env(node, time_multiplier, 1)).
+-define(TIME_MULTIPLIER,          application:get_env(grisplite, time_multiplier, 1)).
 -define(SLEEP(Interval),        timer:sleep((round(Interval/?TIME_MULTIPLIER)))).
 
 -define(PAUSEMS,                     ?SLEEP(?MS)).
@@ -86,24 +86,24 @@ end).
 % -define(DAN,      lists:seq(1,2,3) ).
 
 % -define(BOARDS(Name),   [ list_to_atom(lists:flatten(unicode:characters_to_list(["node@my_grisp_board", "_", integer_to_list(X)], utf8))) || X <- Name ] ).
--define(BOARDS(Name),   [ list_to_atom(unicode:characters_to_list(["node@my_grisp_board", "_", integer_to_list(X)], utf8)) || X <- Name ] ).
+-define(BOARDS(Name),   [ list_to_atom(unicode:characters_to_list(["grisplite@my_grisp_board", "_", integer_to_list(X)], utf8)) || X <- Name ] ).
 
 %%====================================================================
 %% Child Specifications
 %%====================================================================
 
--define(NODE_WORKER_SUP_SPEC,
-	#{id => node_worker_sup,
-	  start => {node_worker_sup, start_link, []},
+-define(WORKER_SUP_SPEC,
+	#{id => grisplite_worker_sup,
+	  start => {grisplite_worker_sup, start_link, []},
 	  restart => temporary, type => supervisor,
-	  shutdown => 15000, modules => [node_worker_sup]}).
+	  shutdown => 15000, modules => [grisplite_worker_sup]}).
 
 -define(PINGER_SPEC,
-	#{id => node_ping_worker,
-	  start => {node_ping_worker, start_link, []},
+	#{id => grisplite_ping_worker,
+	  start => {grisplite_ping_worker, start_link, []},
 	  restart => permanent, type => worker,
 	  shutdown => brutal_kill,
-	  modules => [node_ping_worker]}).
+	  modules => [grisplite_ping_worker]}).
 
 -define(SENSOR_SERVER_SPEC,
 	#{id => node_sensor_server_worker,
@@ -179,11 +179,8 @@ end).
     generic_tasks_server => ?GENERIC_TASKS_SERVER_SPEC,
     generic_tasks_worker => ?GENERIC_TASKS_WORKER_SPEC,
     pinger_worker => ?PINGER_SPEC,
-    sensor_server_worker => ?SENSOR_SERVER_SPEC,
-    pmod_als_worker => ?PMOD_ALS_WORKER_SPEC,
     node_stream_worker => ?NODE_STREAM_WORKER_SPEC(board),
     node_stream_worker_emu => ?NODE_STREAM_WORKER_SPEC(emu),
-    sensor_client_worker => ?SENSOR_CLIENT_SPEC,
     node_utils_server => ?NODE_UTILS_SPEC,
     node_storage_server => ?NODE_STORAGE_SPEC,
     node_benchmark_server => ?NODE_BENCHMARK_SPEC}).
