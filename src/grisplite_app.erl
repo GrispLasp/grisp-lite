@@ -23,13 +23,15 @@ start(_StartType, _StartArgs) ->
     {ok, Supervisor} = grisplite:start(node),
     % application:ensure_all_started(os_mon),
     % node_util:set_platform(),
-    ?PAUSE3,
-    % start_timed_apps(),
-    grisplite_util:start_primary_workers(primary_workers),
-    % start_primary_workers(distributed_workers),
-
-    LEDs = [1, 2],
-    [grisp_led:flash(L, aqua, 500) || L <- LEDs],
+    % ?PAUSE3,
+    % grisplite_util:start_timed_apps(),
+    % ?PAUSE3,
+    % grisplite_util:start_primary_workers(primary_workers),
+    % ?PAUSE3,
+    % grisplite_util:start_primary_workers(distributed_workers),
+    ok = run(),
+    % LEDs = [1, 2],
+    % [grisp_led:flash(L, aqua, 500) || L <- LEDs],
     % grisp_led:color(1,aqua).
     {ok, Supervisor}.
 
@@ -41,8 +43,29 @@ stop(_State) ->
 %%====================================================================
 %% Internal functions
 %%====================================================================
+run() ->
+  ?PAUSE3,
+  grisplite_util:start_timed_apps(),
+  ?PAUSE3,
+  grisplite_util:start_primary_workers(primary_workers),
+  ?PAUSE3,
+  grisplite_util:start_primary_workers(distributed_workers),
+  ?PAUSE3,
+  ok.
 
+% erlang:memory().
 % lasp_peer_service:manager().
 % lasp_peer_service:members().
 % ets:match(node(),'$1').
+% grisplite_util:start_timed_apps().
 % grisplite_util:start_primary_workers(primary_workers).
+% grisplite_util:start_primary_workers(distributed_workers).
+
+% M = rpc:call(grisplite@my_grisp_board_1, lasp_peer_service, manager, []).
+% R = rpc:call(grisplite@my_grisp_board_1, M, myself, []).
+% R = rpc:call(grisplite@my_grisp_board_2, partisan_hyparview_peer_service_manager, myself, []).
+% ok = lasp_peer_service:join(R).
+
+% grisplite_generic_tasks_server:add_task({task1, all, fun () -> grisplite_generic_tasks_functions:task_model_test_function() end }).
+% lasp:query(grisplite_util:atom_to_lasp_identifier(tasks,state_orset)).
+% rp(ets:all()).

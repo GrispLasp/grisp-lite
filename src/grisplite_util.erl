@@ -12,6 +12,29 @@
 %% Utility functions
 %%====================================================================
 
+start_primary_workers(Workers) ->
+  [ grisplite_server:start_worker(Worker) || Worker <- grisplite_config:get(Workers, []) ].
+
+%% https://github.com/SpaceTime-IoT/erleans/blob/5ee956c3bc656558d56e611ca2b8b75b33ba0962/src/erleans_app.erl#L46
+start_timed_apps() ->
+  Apps = grisplite_config:get(timed_apps, []),
+  T1 = erlang:monotonic_time(second),
+  Started = lists:foldl(fun(App, Acc) ->
+                  case application:ensure_all_started(App) of
+                      {ok, Deps} ->
+                          [Deps | Acc];
+                      {error, Reason} ->
+                          logger:error("Could not start application
+                            ~s: reason=~p", [App, Reason]),
+                          Acc
+                  end
+                end, [], Apps),
+              T2 = erlang:monotonic_time(second),
+              Time = T2 - T1,
+              logger:log(notice, "Time to start ~p ~n"
+              "is approximately ~p seconds ~n",
+              [Started, Time]).
+
 set_platform() ->
   case os:type() of % Check if application is ran on a grisp or a laptop
     {unix, darwin} -> os:putenv("type", "laptop");
@@ -41,10 +64,6 @@ process(N) ->
     process(N + 1).
 
 %%--------------------------------------------------------------------
-
-start_primary_workers(Workers) ->
-  [ grisplite_server:start_worker(Worker)
-    || Worker <- grisplite_config:get(Workers, []) ].
     % PrimaryWorkers = grisplite_config:get(Workers, []),
     % lists:foreach(fun(Worker) ->
     %                 grisplite_server:start_worker(Worker)
@@ -68,7 +87,7 @@ atom_to_lasp_identifier(Name, Type) ->
 declare_crdts(Vars) ->
     logger:log(info, "Declaring Lasp variables ~n"),
     lists:foldl(fun(Name, Acc) ->
-                    [lasp:declare(node_util:atom_to_lasp_identifier(Name,state_orset), state_orset) | Acc]
+                    [lasp:declare(grisplite_util:atom_to_lasp_identifier(Name,state_orset), state_orset) | Acc]
                   end, [], Vars).
 
 lasp_id_to_atom({BitString, _Type}) ->
@@ -175,7 +194,7 @@ task() ->
   Reached = lists:foreach (fun
       (Elem) ->
           % net_adm:ping(Elem)
-          Remote = rpc:call(Elem, node_generic_tasks_worker, start_task, [taskdata])
+          Remote = rpc:call(Elem, grisplite_generic_tasks_worker, start_task, [taskdata])
   end, Remotes).
 
 remotes2() ->
@@ -252,7 +271,7 @@ form_squadron() ->
     ok.
 
 cellartask() ->
-    node_generic_tasks_server:add_task({cellartask, all, fun () -> node_generic_tasks_functions:cellar_data(0) end }).
+    grisplite_generic_tasks_server:add_task({cellartask, all, fun () -> grisplite_generic_tasks_functions:cellar_data(0) end }).
 
 cellarrun() ->
     {ok, L} = lasp_peer_service:members(),
@@ -260,7 +279,7 @@ cellarrun() ->
     (Elem) ->
         case net_adm:ping(Elem) of
             pong ->
-                rpc:call(Elem, node_generic_tasks_worker, start_task, [cellartask]);
+                rpc:call(Elem, grisplite_generic_tasks_worker, start_task, [cellartask]);
             pang ->
                 [error, Elem]
             end
@@ -275,7 +294,7 @@ data() ->
     {ok, L} = lasp_peer_service:members(),
     lists:foldl(fun
         (Elem, AccIn) ->
-            {ok, S} = lasp:query(node_util:atom_to_lasp_identifier(Elem,state_gset)),
+            {ok, S} = lasp:query(grisplite_util:atom_to_lasp_identifier(Elem,state_gset)),
             Measurements = sets:to_list(S),
             [{Elem, Measurements}] ++ AccIn
     end, [data], L).

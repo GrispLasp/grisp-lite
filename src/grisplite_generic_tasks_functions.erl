@@ -1,0 +1,462 @@
+-module(grisplite_generic_tasks_functions).
+-compile(export_all).
+
+-include("grisplite.hrl").
+
+task_model_test_function() ->
+  logger:log(info, "Running Task Model Test Function ~n"),
+  % {pmod_als, Pid, Ref} = grisplite_util:get_als(),
+  Identifier = grisplite_util:atom_to_lasp_identifier(node(), state_orset),
+  {ok, {Id, Type, Metadata, Value}} = lasp:declare(Identifier, state_orset),
+  ?PAUSE10,
+  Light = pmod_als:raw(),
+  lasp:update(Id, {add, Light}, self()).
+% nav_sensor(Comp, Register) ->
+%   % grisp:add_device(spi1, pmod_nav),
+%   % logger:log(info, "Value = ~p ~n", pmod_nav:read(alt, [press_out])),
+%   logger:log(notice, "Value = ~p ~n", pmod_nav:read(Comp, [Register])).
+%
+%
+% meteorological_statistics(SampleCount, SampleInterval, Trigger) ->
+%     % Must check if module is available
+%     {pmod_nav, Pid, _Ref} = grisplite_util:get_nav(),
+%     % meteo = shell:rd(meteo, {press = [], temp = []}),
+%     % State = #{press => [], temp => [], time => []},
+%     State = maps:new(),
+%     State1 = maps:put(press, [], State),
+%     State2 = maps:put(temp, [], State1),
+%     State3 = maps:put(time, [], State2),
+%
+%     FoldFun = fun
+%         (Elem, AccIn) when is_integer(Elem) andalso is_map(AccIn) ->
+%             timer:sleep(SampleInterval),
+%             T = node_stream_worker:maybe_get_time(),
+%             % T = calendar:local_time(),
+%             [Pr, Tmp] = gen_server:call(Pid, {read, alt, [press_out, temp_out], #{}}),
+%             % [Pr, Tmp] = [1000.234, 29.55555],
+%             #{press => maps:get(press, AccIn) ++ [Pr],
+%             temp => maps:get(temp, AccIn) ++ [Tmp],
+%             time => maps:get(time, AccIn) ++ [T]}
+%     end,
+%
+%     M = lists:foldl(FoldFun, State3, lists:seq(1, SampleCount)),
+%     [Pressures, Temperatures, Epochs] = maps:values(M),
+%
+%     Result = #{measures => lists:zip3(Epochs, Pressures, Temperatures),
+%         pmean => 'Elixir.Numerix.Statistics':mean(Pressures),
+%         pvar => 'Elixir.Numerix.Statistics':variance(Pressures),
+%         tmean => 'Elixir.Numerix.Statistics':mean(Temperatures),
+%         tvar => 'Elixir.Numerix.Statistics':variance(Temperatures),
+%         cov => 'Elixir.Numerix.Statistics':covariance(Pressures, Temperatures)},
+%     % {ok, {Id, _, _, _}} = hd(node_util:declare_crdts([meteostats])),
+%     % {ok, {NewId, NewT, NewM, NewV}} = lasp:update(Id, {add, {node(), Result}}, self()),
+%     {ok, {Id, _, _, _}} = hd(node_util:declare_crdts([node()])),
+%     % {ok, {ExecId, _, _, _}} = hd(node_util:declare_crdts([executors])),
+%     % {ok, {ChunksId, _, _, _}} = lasp:declare({"<<chunks>>", state_gcounter}, state_gcounter),
+%     {ok, {ExecId, _, _, _}} = lasp:declare({"<<executors>>", state_gset}, state_gset),
+%     % {ok, {ExecId, _, _, _}} = lasp:declare({"<<executors>>", state_gset}, state_gset).
+%     {ok, {NewId, NewT, NewM, NewV}} = lasp:update(Id, {add, Result}, self()),
+%
+%     % {ok, {NewId, NewT, NewM, NewV}} = lasp:update({<<"test">>, state_gset}, {add, "hello"}, self()),
+%     % lasp:update({<<"executors">>}, {add, NewId}, self()),
+%     % {ok, {_, _, _, _}} = lasp:update(ExecId, {add, NewId}, self()),
+%     lasp:update(ExecId, {add, NewId}, self()),
+%     % lasp:update({"<<chunks>>", state_gcounter}, increment, self()),
+%     % node_app:add_task_meteo().
+%     % {ok, Set} = lasp:query({<<"node@GrispAdhoc">>, state_gset}).
+%     % sets:to_list(Set).
+%     spawn(fun() ->
+%         lasp:read(ExecId, {cardinality, Trigger}),
+%         % ExecId = node_util:atom_to_lasp_identifier(executors,state_gset),
+%         % NOTE : lasp:read() WILL block current process regardless
+%         % if the minimim value has been reached, must ALWAYS be spawned in subprocess
+%         {ok, Set} = lasp:query(ExecId),
+%         % {ok, Set} = lasp:query({"<<executors>>", state_gset}),
+%         L = sets:to_list(Set),
+%         % io:format("Values = ~p ~n", L),
+%         [ io:format("Set = ~p ~n", [X]) || X <- L],
+%         [H|T] = L,
+%         UnionFold = fun
+%             (SetName, AccIn) ->
+%                 {UID, Num} = AccIn,
+%                 % Right = node_util:atom_to_lasp_identifier(SetName,state_orset),
+%                 UNum = list_to_bitstring("union" ++ integer_to_list(Num)),
+%                 {ok, {UnionId, _, _, _}} = lasp:declare({UNum, state_orset}, state_orset),
+%                 lasp:union(UID, SetName, UnionId),
+%                 {UnionId, Num + 1}
+%         end,
+%         lists:foldl(UnionFold, {H, 1}, T)
+%     end),
+%
+%     {ok, {NewId, NewT, NewM, NewV}}.
+%
+% %% Can provide current union of measurements
+% %% even when sensing task is still measuring
+% statistics_union(Id) ->
+%     {ok, Set} = lasp:query(Id),
+%     L = sets:to_list(Set),
+%     [H|T] = L,
+%     MergeFun = fun(K, V1, V2) ->
+%         lists:flatten([V1,V2])
+%     end,
+%
+%     MapsMergeFun = fun
+%         (M, AccIn) ->
+%             node_util:maps_merge(MergeFun, AccIn, M)
+%     end,
+%
+%     UMap = lists:foldl(MapsMergeFun, H, T),
+%     TempMean = 'Elixir.Numerix.Statistics':mean(maps:get(tmean, UMap)),
+%     PressMean = 'Elixir.Numerix.Statistics':mean(maps:get(pmean, UMap)),
+%     UMap2 = maps:put(tmean_union, TempMean, UMap),
+%     UMap3 = maps:put(pmean_union, PressMean, UMap2),
+%     Tid = ets:new(stats, [public, ordered_set, named_table, {heir, whereis(node), []}]),
+%     % Tid = ets:whereis(stats),
+%     % io:format("Map size = ~p ~n", [maps:size(UMap3)]),
+%     ets:insert(Tid, {UMap3}).
+%     % UMap3.
+%     % spawn(fun() -> lasp:read(ExecId, {size, 3}), io:format("3 reached") end).
+% % L = lists:map(MapFun, lists:seq(1, SampleCount)),
+% % MapFun = fun
+% %     (Elem) when is_integer(Elem) ->
+% %         timer:sleep(SampleInterval),
+% %         T = node_stream_worker:maybe_get_time(),
+% %         Mes = gen_server:call(Pid, {read, alt, [press_out, temp_out], #{}}),
+% %         {T, Mes}
+% % end,
+% %#{press := Press, temp := Temp, time := Time}
+% % L = lists:map(MapFun, lists:seq(1, SampleCount)),
+%
+% % Pressures = maps:get(press, M),
+% % Temperatures = maps:get(temp, M),
+% % Epochs = maps:get(time, M),
+% % [ X || X <- maps:values(M)],
+%     % ReceiverFun = fun (State#meteo{press = PList}) ->
+%     %     receive
+%     %
+%     %     after
+%     %         SampleInterval ->
+%     %             P = gen_server:call(Pid, {read, alt, [press_out], #{}}),
+%     %             NewState = #meteo{press = PList ++ P, temp = []},
+%     %             self() ! NewState
+%     %     end.
+%     %
+%     % ok.
+%         % ReceiverFun = fun () ->
+%         %     receive
+%         %         Data when is_list(Data) ->
+%         %             disconnect(),
+%         %             idle();
+%         %         {connect, B} ->
+%         %             B ! {busy, self()},
+%         %             wait_for_onhook()
+%         %     end,
+%         %
+%         %
+%         % PFun = fun
+%         %     (SampleInterval) ->
+%         %         [PressOut] = erlang:send_after(SampleInterval, Pid, {read, alt, [press_out], []})
+%         % end
+%         % wait_for_onhook() ->
+%         %     receive
+%         %         Data when is_list(Data) ->
+%         %             disconnect(),
+%         %             idle();
+%         %         {connect, B} ->
+%         %             B ! {busy, self()},
+%         %             wait_for_onhook()
+%         %     end.
+%
+%
+%
+% temp_sensor({Counter, Temps}, PeriodicTime) ->
+%
+%   WaitFun = fun(State) ->
+%       receive
+%       after (PeriodicTime) ->
+%         logger:log(info, "State is ~p and periodicTime is ~p ===~n", [State, PeriodicTime]),
+%         temp_sensor(State, PeriodicTime)
+%       end
+%   end,
+%
+%   Sum = fun F(List) ->
+%           SumFun = fun ([H|T]) -> H + F(T);
+%               ([]) -> 0
+%           end,
+%           SumFun(List)
+%         end,
+%
+%   Average = fun(List) -> Sum(List)/length(List) end,
+%
+%   SensorFun = fun() ->
+%     logger:log(info, "=== Counter is at ~p ===~n", [Counter]),
+%     % logger:log(info, "=== Temp list : ~p ===~n",[Temps]),
+%     logger:log(info, "=== Temp list : ~p ===~n",[Temps]),
+%     case Counter of
+%       5 ->
+%         logger:log(info, "=== Timer has ended, aggregating data and updating CRDT... === ~n"),
+%         AverageTemp = Average(Temps),
+%         logger:log(info, "=== Average temp in past hour is ~p ===~n", [AverageTemp]),
+%         {ok, TempsCRDT} = lasp:query({<<"temp">>, state_orset}),
+%         TempsList = sets:to_list(TempsCRDT),
+%         % logger:log(info, "=== Temps CRDT : ~p ===~n", [TempsList]),
+%         logger:log(info, "=== Temps CRDT : ~p ===~n", [TempsList]),
+%         OldCrdtData = [{Node, OldAvg, HourCounter, HourAvg, HourData} || {Node, OldAvg, HourCounter, HourAvg, HourData} <- TempsList, Node =:= node()],
+%         % logger:log(info, "=== Old CRDT data is ~p ===~n",[OldCrdtData]),
+%         logger:log(info, "=== Old CRDT data is ~p ===~n",[OldCrdtData]),
+%         case length(OldCrdtData) of
+%           0 ->
+%             lasp:update({<<"temp">>,state_orset},{add,{node(), AverageTemp, 1, [AverageTemp], [AverageTemp]}}, self());
+%           1 ->
+%             {Node, OldAvg, HourCounter, HourAvg, HourData} = hd(OldCrdtData),
+%             NewAverageTemp = ((OldAvg * HourCounter)/(HourCounter+1))+(AverageTemp*(1/(HourCounter+1))),
+%             logger:log(info, "=== New average temp : ~p ===~n",[NewAverageTemp]),
+%             lasp:update({<<"temp">>, state_orset}, {rmv, {Node, OldAvg, HourCounter, HourAvg, HourData}}, self()),
+%             lasp:update({<<"temp">>,state_orset},{add,{node(), NewAverageTemp, HourCounter+1, HourAvg ++ [NewAverageTemp], HourData ++ [AverageTemp]}}, self())
+%         end,
+%         {0, []};
+%       _ ->
+%         {AnswerTemp,Temp} = node_sensor_server_worker:read(temp),
+%         TempList = case AnswerTemp of
+%           read ->  lists:append(Temps,[Temp]);
+%           sensor_not_created -> exit(sensor_not_created)
+%         end,
+%         {Counter+1, TempList}
+%     end
+%   end,
+%   WaitFun(SensorFun()).
+%
+%
+% sonar_sensor(Mode, NodeTarget) ->
+%   SonarSensor = fun A() ->
+%     receive
+%       true ->
+%         {sonar_listener, NodeTarget} ! trigger,
+%         % {sonar_listener, node@my_grisp_board_2} ! {fuck}.
+%         spawn(fun () ->
+%           case Mode of
+%             in ->
+%               lasp:update({"<<enters>>", state_gcounter}, increment, self());
+%             out ->
+%               lasp:update({"<<exits>>", state_gcounter}, increment, self())
+%           end
+%         end),
+%         grisp_led:color(1,blue),
+%         grisp_led:color(2,blue),
+%       %  timer:sleep(500),
+%       %  grisp_led:color(1,green),
+%       %  grisp_led:color(2,green),
+%         A()
+%     end
+%   end,
+%
+%
+%   SonarListener = fun B() ->
+%     receive
+%       Msg ->
+%       %  logger:log(info, "=== received ~p ===~n", [Mode]),
+%         grisp_led:color(1,red),
+%         grisp_led:color(2,red),
+%         PidSonar = whereis(pmod_maxsonar),
+%         erlang:suspend_process(PidSonar),
+%         logger:log(notice, "suspending_process~n"),
+%         timer:sleep(750),
+%         erlang:resume_process(PidSonar),
+%         B()
+%     end
+%   end,
+%
+%   PidSensor = spawn(SonarSensor),
+%   register(sonar_sensor, PidSensor),
+%   PidListener = spawn(SonarListener),
+%   register(sonar_listener, PidListener).
+%
+%
+%
+% % all_sensor_data(Index, Nav, Als) ->
+% %     [Press, Temp] = gen_server:call(Nav, {read, alt, [press_out, temp_out], #{}}),
+% %     Mag = gen_server:call(Nav, {read, mag, [out_x_m, out_y_m, out_z_m], #{}}),
+% %     Gyro = gen_server:call(Nav, {read, acc, [out_x_g, out_y_g, out_z_g], #{}}),
+% %     Raw = gen_server:call(Als, raw),
+% %     {_,{H,Mi,_}} = calendar:local_time(),
+% %     {ok, {_, _, _, _}} = lasp:update(node_util:atom_to_lasp_identifier(node(),state_gset), {add, [Index,H*60 + Mi,Raw,Press,Temp,Mag,Gyro]}, self()),
+% %     timer:sleep(10000),
+% %     all_sensor_data(Index+1, Nav,Als).
+%
+%
+%
+% all_sensor_data(Index, Nav, Als) ->
+%     % {pmod_nav, Nav, _} = node_util:get_nav(),
+%     % {pmod_als, Als, _} = node_util:get_als(),
+%     [RawPress, RawTemp] = gen_server:call(Nav, {read, alt, [press_out, temp_out], #{}}),
+%     Press = verify(pressure, RawPress, Nav),
+%     Temp = verify(temp, RawTemp, Nav),
+%     Mag = gen_server:call(Nav, {read, mag, [out_x_m, out_y_m, out_z_m], #{}}),
+%     Gyro = gen_server:call(Nav, {read, acc, [out_x_g, out_y_g, out_z_g], #{}}),
+%     Raw = gen_server:call(Als, raw),
+%     {_,{H,Mi,_}} = calendar:local_time(),
+%     {ok, {_, _, _, _}} = lasp:update(node_util:atom_to_lasp_identifier(node(),state_gset), {add, [Index, H*60 + Mi,Raw,Press,Temp,Mag,Gyro]}, self()),
+%     timer:sleep(5000),
+%     all_sensor_data(Index+1,Nav,Als).
+%
+% cellar_data(Index) ->
+%     {pmod_nav, Nav, _} = node_util:get_nav(),
+%     {pmod_als, Als, _} = node_util:get_als(),
+%     Id = node_util:atom_to_lasp_identifier(node(),state_gset),
+%     lasp:declare(Id, state_gset),
+%     cellar_data(Index,Nav,Als,Id).
+%
+% cellar_data(Index, Nav, Als, Id) ->
+%     [RawPress] = gen_server:call(Nav, {read, alt, [press_out], #{}}),
+%     [RawTemp] = gen_server:call(Nav, {read, alt, [temp_out], #{}}),
+%     % [RawPress, RawTemp] = ,
+%     % FPress = verify(pressure, RawPress, Nav),
+%     % FTemp = verify(temp, RawTemp, Nav),
+%     % Press = round(node_generic_tasks_functions:verify(pressure, gen_server:call(Nav, {read, alt, [press_out], #{}}), Nav)),
+%     % TODO : remove sensor value verification for demo
+%     Press = round(RawPress),
+%     Temp = round(RawTemp),
+%     % Press = round(verify(pressure, gen_server:call(Nav, {read, alt, [press_out], #{}}), Nav)),
+%     % Temp = round(verify(temp, gen_server:call(Nav, {read, alt, [temp_out], #{}}), Nav)),
+%     % Mag = gen_server:call(Nav, {read, mag, [out_x_m, out_y_m, out_z_m], #{}}),
+%     % Gyro = gen_server:call(Nav, {read, acc, [out_x_g, out_y_g, out_z_g], #{}}),
+%     Mag = node_util:gebirgsjager(10),
+%     Gyro = node_util:gebirgsjager(15),
+%     Raw = gen_server:call(Als, raw),
+%     {_,{H,Mi,_}} = calendar:local_time(),
+%     %% http://erlang.org/doc/programming_examples/bit_syntax.html
+%     %% replace full float representation by
+%     %% construction of XOR-schemes using bitstrings
+%     %% similar to hashing process s.t. dissemination
+%     %% of data is much lighter compared to gossiping of
+%     %% floats.
+%     {ok, {_, _, _, _}} = lasp:update(Id, {add, [Index, H*60 + Mi,Raw,Press,Temp,Mag,Gyro]}, self()),
+%     % {ok, {_, _, _, _}} = lasp:update({<<"node@my_grisp_board_1">>,state_gset}, {add, [1, 1*60 + 2,12,1000,20,[1,2,3],[3,4,5]]}, self()).
+%     timer:sleep(3000),
+%     cellar_data(Index+1,Nav,Als,Id).
+%
+% verify(Type, Val, Nav) ->
+%     case Type of
+%       pressure when Val > 950 andalso Val < 1050 ->
+%         Val;
+%       pressure ->
+%         ?PAUSE1,
+%         NewPress = gen_server:call(Nav, {read, alt, [press_out], #{}}),
+%         % NewPress = (1000 - rand:uniform(5000)),
+%         verify(pressure, NewPress, Nav);
+%       temp when Val > 10 andalso Val < 45 ->
+%         Val;
+%       temp ->
+%         ?PAUSE1,
+%         NewTemp = gen_server:call(Nav, {read, alt, [temp_out], #{}}),
+%         % NewTemp = (20 - rand:uniform(50)),
+%         verify(temp, NewTemp, Nav)
+%     end.
+%
+% verify3axis(Type, [X,Y,Z], Nav) ->
+%   Val = abs(X+Y+Z),
+%   case Type of
+%       gyro when Val < 50 ->
+%         Val;
+%       gyro ->
+%         ?PAUSE3,
+%         NewGyro = gen_server:call(Nav, {read, acc, [out_x_g, out_y_g, out_z_g], #{}}),
+%         % NewGyro = (1000 - rand:uniform(5000)),
+%         verify3axis(gyro, NewGyro, Nav)
+%     end.
+% % lasp:declare(node_util:atom_to_lasp_identifier(node(),state_gset),state_gset).
+% % lasp:update(node_util:atom_to_lasp_identifier(node(),state_gset), {add, "stuff"}, self()).
+% % node_storage_util:flush_crdt(node_util:atom_to_lasp_identifier(node(),state_gset),undef,save_no_rmv_all).
+% % node_storage_util:persist(node_util:atom_to_lasp_identifier(node(),state_gset)).
+% % ets:match(node(), '$1').
+% % ets:delete(node(), node_util:atom_to_lasp_identifier(node(),state_gset)).
+% % lasp:query(node_util:atom_to_lasp_identifier(node(),state_gset)).
+%
+%
+% cellar_data_rem(Index) ->
+%     % [RawPress] = gen_server:call(Nav, {read, alt, [press_out], #{}}),
+%     % [RawPress] = pmod_nav:read(alt, [press_out]),
+%     % [RawTemp] = pmod_nav:read(alt, [temp_out]),
+%     % [RawTemp] = gen_server:call(Nav, {read, alt, [temp_out], #{}}),
+%     % [RawPress, RawTemp] = ,
+%     % FPress = verify(pressure, RawPress, Nav),
+%     % FTemp = verify(temp, RawTemp, Nav),
+%     % Press = round(node_generic_tasks_functions:verify(pressure, gen_server:call(Nav, {read, alt, [press_out], #{}}), Nav)),
+%     % TODO : remove sensor value verification for demo
+%     % Press = round(RawPress),
+%     % Temp = round(RawTemp),
+%     % Press = rand:uniform(1000),
+%     % Temp = rand:uniform(100),
+%     % Press = round(verify(pressure, gen_server:call(Nav, {read, alt, [press_out], #{}}), Nav)),
+%     % Temp = round(verify(temp, gen_server:call(Nav, {read, alt, [temp_out], #{}}), Nav)),
+%     % Mag = gen_server:call(Nav, {read, mag, [out_x_m, out_y_m, out_z_m], #{}}),
+%     % Gyro = gen_server:call(Nav, {read, acc, [out_x_g, out_y_g, out_z_g], #{}}),
+%     % Mag = node_util:gebirgsjager(10),
+%     % Gyro = node_util:gebirgsjager(15),
+%     % % Raw = gen_server:call(Als, raw),
+%     % Raw = pmod_als:raw(),
+%     % % Raw = rand:uniform(255),
+%     % {_,{H,Mi,_}} = calendar:local_time(),
+%     %% http://erlang.org/doc/programming_examples/bit_syntax.html
+%     %% replace full float representation by
+%     %% construction of XOR-schemes using bitstrings
+%     %% similar to hashing process s.t. dissemination
+%     %% of data is much lighter compared to gossiping of
+%     %% floats.
+%     {T,Raw,Press,Temp,Mag,Gyro} = node_generic_tasks_functions:collect(),
+%     Id = node_util:atom_to_lasp_identifier(node(),state_gset),
+%     % {ok, {_, _, _, _}} = lasp:update(Id, {add, [Index, H*60 + Mi,Raw,Press,Temp,Mag,Gyro]}, self()),
+%     {ok, {_, _, _, _}} = lasp:update(Id, {add, [Index,T,Raw,Press,Temp,Mag,Gyro]}, self()),
+%     % {ok, {_, _, _, _}} = lasp:update({<<"node@my_grisp_board_1">>,state_gset}, {add, [1, 1*60 + 2,12,1000,20,[1,2,3],[3,4,5]]}, self()).
+%     timer:sleep(3000),
+%     cellar_data_rem(Index+1).
+%
+% collect() ->
+%   [RawPress] = pmod_nav:read(alt, [press_out]),
+%   [RawTemp] = pmod_nav:read(alt, [temp_out]),
+%   Press = abs(round(RawPress)),
+%   Temp = abs(RawTemp),
+%   Mag = node_util:gebirgsjager(10),
+%   Gyro = node_util:gebirgsjager(15),
+%   Raw = pmod_als:raw(),
+%   {_,{H,Mi,_}} = calendar:local_time(),
+%   {H*60 + Mi,Raw,Press,Temp,Mag,Gyro}.
+% cellar_data(Index) ->
+%     {pmod_nav, Nav, _} = node_util:get_nav(),
+%     {pmod_als, Als, _} = node_util:get_als(),
+%     Id = node_util:atom_to_lasp_identifier(node(),state_gset),
+%     lasp:declare(Id, state_gset),
+%     cellar_data(Index,Nav,Als,Id).
+%
+% cellar_data(Index, Nav, Als, Id) ->
+%     % [RawPress, RawTemp] = gen_server:call(Nav, {read, alt, [press_out, temp_out], #{}}),
+%     % [RawPress, RawTemp] = ,
+%     % FPress = verify(pressure, RawPress, Nav),
+%     % FTemp = verify(temp, RawTemp, Nav),
+%     Press = round(verify(pressure, gen_server:call(Nav, {read, alt, [press_out], #{}}), Nav)),
+%     Temp = round(verify(temp, gen_server:call(Nav, {read, alt, [temp_out], #{}}), Nav)),
+%     % Mag = gen_server:call(Nav, {read, mag, [out_x_m, out_y_m, out_z_m], #{}}),
+%     % Gyro = gen_server:call(Nav, {read, acc, [out_x_g, out_y_g, out_z_g], #{}}),
+%     Mag = node_util:gebirgsjager(10),
+%     Gyro = node_util:gebirgsjager(15),
+%     Raw = gen_server:call(Als, raw),
+%     {_,{H,Mi,_}} = calendar:local_time(),
+%     %% http://erlang.org/doc/programming_examples/bit_syntax.html
+%     %% replace full float representation by
+%     %% construction of XOR-schemes using bitstrings
+%     %% similar to hashing process s.t. dissemination
+%     %% of data is much lighter compared to gossiping of
+%     %% floats.
+%     {ok, {_, _, _, _}} = lasp:update(Id, {add, [Index, H*60 + Mi,Raw,Press,Temp,Mag,Gyro]}, self()),
+%     % {ok, {_, _, _, _}} = lasp:update({<<"node@my_grisp_board_1">>,state_gset}, {add, [1, 1*60 + 2,12,1000,20,[1,2,3],[3,4,5]]}, self()).
+%     timer:sleep(3000),
+%     cellar_data(Index+1,Nav,Als,Id).
+
+  % lasp:declare(node_util:atom_to_lasp_identifier(node(),state_gset),state_gset).
+  % lasp:update(node_util:atom_to_lasp_identifier(node(),state_gset), {add, "stuff"}, self()).
+  % node_storage_util:flush_crdt(node_util:atom_to_lasp_identifier(node(),state_gset),undef,save_no_rmv_all).
+  % node_storage_util:persist(node_util:atom_to_lasp_identifier(node(),state_gset)).
+  % ets:match(node(), '$1').
+  % ets:delete(node(), node_util:atom_to_lasp_identifier(node(),state_gset)).
+  % lasp:query(node_util:atom_to_lasp_identifier(node(),state_gset)).
+% lasp:query({<<"nonode@nohost">>,state_gset}).

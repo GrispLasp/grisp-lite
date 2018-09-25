@@ -105,82 +105,86 @@ end).
 	  shutdown => brutal_kill,
 	  modules => [grisplite_ping_worker]}).
 
--define(SENSOR_SERVER_SPEC,
-	#{id => node_sensor_server_worker,
-	  start => {node_sensor_server_worker, start_link, []},
-	  restart => permanent, type => worker,
-	  shutdown => brutal_kill,
-	  modules => [node_sensor_server_worker]}).
+% -define(SENSOR_SERVER_SPEC,
+% 	#{id => node_sensor_server_worker,
+% 	  start => {node_sensor_server_worker, start_link, []},
+% 	  restart => permanent, type => worker,
+% 	  shutdown => brutal_kill,
+% 	  modules => [node_sensor_server_worker]}).
 
--define(SENSOR_CLIENT_SPEC,
-	#{id => node_sensor_client_worker,
-	  start => {node_sensor_client_worker, start_link, []},
-	  restart => permanent, type => worker,
-	  shutdown => brutal_kill,
-	  modules => [node_sensor_client_worker]}).
+% -define(SENSOR_CLIENT_SPEC,
+% 	#{id => node_sensor_client_worker,
+% 	  start => {node_sensor_client_worker, start_link, []},
+% 	  restart => permanent, type => worker,
+% 	  shutdown => brutal_kill,
+% 	  modules => [node_sensor_client_worker]}).
 
--define(GENERIC_SERVER_SPEC,
-	#{id => node_generic_server_worker,
-	  start => {node_generic_server_worker, start_link, []},
-	  restart => permanent, type => worker,
-	  shutdown => brutal_kill,
-	  modules => [node_generic_server_worker]}).
+% -define(GENERIC_SERVER_SPEC,
+% 	#{id => node_generic_server_worker,
+% 	  start => {node_generic_server_worker, start_link, []},
+% 	  restart => permanent, type => worker,
+% 	  shutdown => brutal_kill,
+% 	  modules => [node_generic_server_worker]}).
 
 -define(GENERIC_TASKS_SERVER_SPEC,
-	#{id => node_generic_tasks_server,
-	  start => {node_generic_tasks_server, start_link, []},
+	#{id => grisplite_generic_tasks_server,
+	  start => {grisplite_generic_tasks_server, start_link, []},
 	  restart => permanent, type => worker,
 	  shutdown => brutal_kill,
-	  modules => [node_generic_tasks_server]}).
+	  modules => [grisplite_generic_tasks_server]}).
 
--define(PMOD_ALS_WORKER_SPEC,
-	#{id => pmod_als_worker,
-	  start => {pmod_als_worker, start_link, []},
-	  restart => permanent, type => worker,
-	  shutdown => brutal_kill, modules => [pmod_als_worker]}).
+% -define(PMOD_ALS_WORKER_SPEC,
+% 	#{id => pmod_als_worker,
+% 	  start => {pmod_als_worker, start_link, []},
+% 	  restart => permanent, type => worker,
+% 	  shutdown => brutal_kill, modules => [pmod_als_worker]}).
 
 -define(GENERIC_TASKS_WORKER_SPEC,
-	#{id => node_generic_tasks_worker,
-	  start => {node_generic_tasks_worker, start_link, []},
+	#{id => grisplite_generic_tasks_worker,
+	  start => {grisplite_generic_tasks_worker, start_link, []},
 	  restart => permanent, type => worker,
 	  shutdown => brutal_kill,
-	  modules => [node_generic_tasks_worker]}).
+	  modules => [grisplite_generic_tasks_worker]}).
 
--define(NODE_STREAM_WORKER_SPEC(Mode),
-	#{id => node_stream_worker,
-	  start => {node_stream_worker, start_link, [Mode]},
-	  restart => permanent, type => worker,
-	  shutdown => brutal_kill,
-	  modules => [node_stream_worker]}).
+% -define(NODE_STREAM_WORKER_SPEC(Mode),
+% 	#{id => node_stream_worker,
+% 	  start => {node_stream_worker, start_link, [Mode]},
+% 	  restart => permanent, type => worker,
+% 	  shutdown => brutal_kill,
+% 	  modules => [node_stream_worker]}).
 
--define(NODE_UTILS_SPEC,
-	#{id => node_utils_server,
-	  start => {node_utils_server, start_link, []},
-	  restart => permanent, type => worker,
-	  shutdown => brutal_kill,
-	  modules => [node_utils_server]}).
+% -define(NODE_UTILS_SPEC,
+% 	#{id => node_utils_server,
+% 	  start => {node_utils_server, start_link, []},
+% 	  restart => permanent, type => worker,
+% 	  shutdown => brutal_kill,
+% 	  modules => [node_utils_server]}).
 
--define(NODE_STORAGE_SPEC,
-	#{id => node_storage_server,
-	  start => {node_storage_server, start_link, []},
-	  restart => permanent, type => worker,
-	  shutdown => brutal_kill,
-	  modules => [node_storage_server]}).
+% -define(NODE_STORAGE_SPEC,
+% 	#{id => node_storage_server,
+% 	  start => {node_storage_server, start_link, []},
+% 	  restart => permanent, type => worker,
+% 	  shutdown => brutal_kill,
+% 	  modules => [node_storage_server]}).
 
--define(NODE_BENCHMARK_SPEC,
-	#{id => node_benchmark_server,
-	  start => {node_benchmark_server, start_link, []},
-	  restart => permanent, type => worker,
-	  shutdown => brutal_kill,
-	  modules => [node_benchmark_server]}).
+% -define(NODE_BENCHMARK_SPEC,
+% 	#{id => node_benchmark_server,
+% 	  start => {node_benchmark_server, start_link, []},
+% 	  restart => permanent, type => worker,
+% 	  shutdown => brutal_kill,
+% 	  modules => [node_benchmark_server]}).
 
+% -define(WORKER_SPECS_MAP,
+%   #{generic_worker => ?GENERIC_SERVER_SPEC,
+%     generic_tasks_server => ?GENERIC_TASKS_SERVER_SPEC,
+%     generic_tasks_worker => ?GENERIC_TASKS_WORKER_SPEC,
+%     pinger_worker => ?PINGER_SPEC,
+%     node_stream_worker => ?NODE_STREAM_WORKER_SPEC(board),
+%     node_stream_worker_emu => ?NODE_STREAM_WORKER_SPEC(emu),
+%     node_utils_server => ?NODE_UTILS_SPEC,
+%     node_storage_server => ?NODE_STORAGE_SPEC,
+%     node_benchmark_server => ?NODE_BENCHMARK_SPEC}).
 -define(WORKER_SPECS_MAP,
-  #{generic_worker => ?GENERIC_SERVER_SPEC,
-    generic_tasks_server => ?GENERIC_TASKS_SERVER_SPEC,
+  #{generic_tasks_server => ?GENERIC_TASKS_SERVER_SPEC,
     generic_tasks_worker => ?GENERIC_TASKS_WORKER_SPEC,
-    pinger_worker => ?PINGER_SPEC,
-    node_stream_worker => ?NODE_STREAM_WORKER_SPEC(board),
-    node_stream_worker_emu => ?NODE_STREAM_WORKER_SPEC(emu),
-    node_utils_server => ?NODE_UTILS_SPEC,
-    node_storage_server => ?NODE_STORAGE_SPEC,
-    node_benchmark_server => ?NODE_BENCHMARK_SPEC}).
+    pinger_worker => ?PINGER_SPEC}).
