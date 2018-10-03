@@ -12,6 +12,43 @@
 %% Utility functions
 %%====================================================================
 
+gc() ->
+    _ = [erlang:garbage_collect(Proc, [{type, 'major'}]) || Proc <- processes()],
+    ok.
+
+query() ->
+    N = node(),
+    Id = atom_to_lasp_identifier(N, state_orset),
+    {ok, Set} = lasp:query(Id),
+    Result = sets:to_list(Set),
+    logger:log(notice, "Result = ~p ~n", [Result]),
+    Result.
+
+run() ->
+  ?PAUSE3,
+  start_timed_apps(),
+  ?PAUSE3,
+  start_primary_workers(primary_workers),
+  ?PAUSE3,
+  start_primary_workers(distributed_workers),
+  ?PAUSE3,
+  ok.
+
+call(Number, M, F, Args) ->
+    Node = ?HOSTNAME(Number),
+    rpc:call(Node,M,F,Args).
+
+join(Number) ->
+    R = call(Number, partisan_hyparview_peer_service_manager, myself, []),
+    lasp_peer_service:join(R).
+
+join_me(Number) ->
+    R = partisan_hyparview_peer_service_manager:myself(),
+    call(Number, lasp_peer_service, join, [R]).
+
+ping(Number) ->
+    net_adm:ping(?HOSTNAME(Number)).
+
 start_primary_workers(Workers) ->
   [ grisplite_server:start_worker(Worker) || Worker <- grisplite_config:get(Workers, []) ].
 
