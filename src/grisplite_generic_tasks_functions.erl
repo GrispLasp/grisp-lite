@@ -7,10 +7,52 @@ task_model_test_function() ->
   logger:log(info, "Running Task Model Test Function ~n"),
   % {pmod_als, Pid, Ref} = grisplite_util:get_als(),
   Identifier = grisplite_util:atom_to_lasp_identifier(node(), state_orset),
-  {ok, {Id, Type, Metadata, Value}} = lasp:declare(Identifier, state_orset),
+  {ok, {Id, _Type, _Metadata, _Value}} = lasp:declare(Identifier, state_orset),
   ?PAUSE10,
   Light = pmod_als:raw(),
   lasp:update(Id, {add, Light}, self()).
+
+light() ->
+    % logger:log(info, "Running Task Model Light Function ~n"),
+    % Identifier = grisplite_util:atom_to_lasp_identifier(node(), state_orset),
+    {ok, {Id, _, _, _}} = lasp:declare(grisplite_util:atom_to_lasp_identifier(node(), state_orset), state_orset),
+    FL = lists:foldl(fun
+        (_Elem, AccIn) ->
+            ?PAUSE10,
+            ALS = pmod_als:raw(),
+            [ALS | AccIn]
+    end, [], lists:seq(1, 10) ),
+    Mean = (lists:sum(FL) / 10),
+    {ok, {Id, _, _, _}} = lasp:update(Id, {add, Mean}, self()),
+
+    ?PAUSE10,
+    grisplite_util:gc(),
+    % logger:log(notice, "Loop end ~n"),
+    % {ok, Set} = lasp:query(Id),
+    % Result = sets:to_list(Set),
+    % logger:log(notice, "Result = ~p ~n", [Result]),
+    light().
+
+fakelight() ->
+    logger:log(info, "Running Task Model Light Function ~n"),
+    Identifier = grisplite_util:atom_to_lasp_identifier(node(), state_orset),
+    {ok, {Id, _Type, _Metadata, _Value}} = lasp:declare(Identifier, state_orset),
+    FL = lists:foldl(fun
+        (_Elem, AccIn) ->
+            % ?PAUSEHMIN,
+            ?PAUSE10,
+            % ?PAUSE1,
+            % ALS = pmod_als:raw(),
+            ALS = rand:uniform(255),
+            [ALS | AccIn]
+    end, [], lists:seq(1, 10) ),
+    Mean = (lists:sum(FL) / 10),
+    lasp:update(Id, {add, Mean}, self()),
+    % logger:log(notice, "Loop end ~n"),
+    % {ok, Set} = lasp:query(Id),
+    % Result = sets:to_list(Set),
+    % logger:log(notice, "Result = ~p ~n", [Result]),
+    fakelight().
 % nav_sensor(Comp, Register) ->
 %   % grisp:add_device(spi1, pmod_nav),
 %   % logger:log(info, "Value = ~p ~n", pmod_nav:read(alt, [press_out])),
