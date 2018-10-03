@@ -86,7 +86,9 @@ end).
 % -define(DAN,      lists:seq(1,2,3) ).
 
 % -define(BOARDS(Name),   [ list_to_atom(lists:flatten(unicode:characters_to_list(["node@my_grisp_board", "_", integer_to_list(X)], utf8))) || X <- Name ] ).
--define(BOARDS(Name),   [ list_to_atom(unicode:characters_to_list(["grisplite@my_grisp_board", "_", integer_to_list(X)], utf8)) || X <- Name ] ).
+-define(HOSTNAME(Number),   list_to_atom(unicode:characters_to_list(["grisplite@my_grisp_board", "_", integer_to_list(Number)], utf8))).
+
+-define(BOARDS(Name),   [ ?HOSTNAME(X) || X <- Name ] ).
 
 %%====================================================================
 %% Child Specifications
