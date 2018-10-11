@@ -4,20 +4,19 @@
 -include_lib("grisplite.hrl").
 
 %% API
--export([start_link/0,
-  find_and_start_task/0,
-  start_task/1,
-  start_all_tasks/0,
-  isRunning/1,
-  stop/0]).
+-export([start_link/0, stop/0]).
+-export([find_and_start_task/0]).
+-export([start_task/1]).
+-export([start_permatask/1]).
+-export([start_all_tasks/0]).
+-export([isRunning/1]).
 
 %% Gen Server Callbacks
--export([init/1,
-  handle_call/3,
-  handle_cast/2,
-  handle_info/2,
-  terminate/2,
-  code_change/3]).
+-export([init/1,code_change/3]).
+-export([handle_call/3]).
+-export([handle_cast/2]).
+-export([handle_info/2]).
+-export([terminate/2]).
 
 %% Records
 -record(state, {running_tasks = [],
@@ -34,6 +33,9 @@ start_link() ->
 
 start_task(Name) ->
   gen_server:call(?MODULE, {start_task, Name}).
+
+start_permatask(Name) ->
+  gen_server:call(?MODULE, {start_permatask, Name}).
 
 find_and_start_task() ->
   gen_server:call(?MODULE, {find_and_start_task}).
@@ -58,7 +60,7 @@ stop() ->
 
 
 init({}) ->
-    logger:log(notice, "Initializing Node Server~n"),
+    logger:log(notice, "Initializing Generic Tasks Worker~n"),
     RestartInterval = grisplite_config:get(generic_tasks_restart_interval, ?MIN),
     erlang:send_after(5000, self(), {start_all_tasks}),
     % {ok, #state{}}.
@@ -67,6 +69,31 @@ init({}) ->
 
 
 handle_call({start_task, Name}, _From, State = #state{running_tasks=RunningTasks, finished_tasks=FinishedTasks}) ->
+    logger:log(info, "=== State is ~p ===~n", [State]),
+    logger:log(info, "=== Finding task ~p ===~n", [Name]),
+    CanRunTask = can_run_task(length(RunningTasks)),
+		case CanRunTask of
+			true ->
+		    Task = grisplite_generic_tasks_server:find_task(Name),
+		    case Task of
+		      {ok, TaskFound} ->
+		        NewFinishedTasksList = FinishedTasks -- [TaskFound],
+		        TaskFun = element(3,TaskFound),
+		        logger:log(info, "=== Task chosen ~p ===~n", [TaskFound]),
+		        {Pid, Ref} = spawn_monitor(TaskFun),
+		        logger:log(info, "=== Spawned Task fun : PID ~p - Ref ~p ===~n", [Pid, Ref]),
+		        RunningTask = erlang:insert_element(4, TaskFound, {Pid, Ref}),
+		        logger:log(info, "=== Running Task ~p ===~n", [RunningTask]),
+		        {reply, RunningTask,  State#state{running_tasks=RunningTasks ++ [RunningTask], finished_tasks=NewFinishedTasksList}};
+		      Error ->
+		        {reply, Error, State}
+		    end;
+			false ->
+				logger:log(notice, "=== Cannot run task, device is overloaded ===~n"),
+				{reply, ko, State}
+			end;
+
+handle_call({start_permatask, Name}, _From, State = #state{running_tasks=RunningTasks, finished_tasks=FinishedTasks}) ->
     logger:log(info, "=== State is ~p ===~n", [State]),
     logger:log(info, "=== Finding task ~p ===~n", [Name]),
     CanRunTask = can_run_task(length(RunningTasks)),

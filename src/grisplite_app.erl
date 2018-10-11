@@ -21,18 +21,19 @@
 start(_StartType, _StartArgs) ->
     logger:log(notice, "Application Master starting Node app ~n"),
     {ok, Supervisor} = grisplite:start(node),
-    % application:ensure_all_started(os_mon),
-    % node_util:set_platform(),
-    % ?PAUSE3,
-    % grisplite_util:start_timed_apps(),
-    % ?PAUSE3,
-    % grisplite_util:start_primary_workers(primary_workers),
-    % ?PAUSE3,
-    % grisplite_util:start_primary_workers(distributed_workers),
-    ok = run(),
+    application:ensure_all_started(os_mon),
+    grisplite_util:set_platform(),
+    ?PAUSE3,
+    grisplite_util:start_timed_apps(),
+    ?PAUSE3,
+    grisplite_util:start_primary_workers(primary_workers),
+    ?PAUSE3,
+    grisplite_util:start_primary_workers(distributed_workers),
+    % ok = grisplite_util:run(),
     % LEDs = [1, 2],
     % [grisp_led:flash(L, aqua, 500) || L <- LEDs],
     % grisp_led:color(1,aqua).
+    logger:log(notice, "Application Master FINISHING ~n"),
     {ok, Supervisor}.
 
 %%--------------------------------------------------------------------
@@ -82,8 +83,11 @@ start_primary_workers(Workers) ->
 % ok = lasp_peer_service:join(R).
 
 % grisplite_generic_tasks_server:add_task({task1, all, fun () -> grisplite_generic_tasks_functions:task_model_test_function() end }).
+% grisplite_generic_tasks_server:add_task({task1, all, fun () -> grisplite_generic_tasks_functions:light() end }).
+% grisplite_generic_tasks_server:add_task({task1, all, fun () -> grisplite_generic_tasks_functions:fakelight() end }).
 % grisplite_generic_tasks_server:add_task({task2, all, fun () -> lists:foreach(fun(E) -> timer:sleep(10000) lasp:update(atom_to_lasp_identifier(node(),state_orset), {add, pmod_als:raw()}, self()) end, lists:seq(1, 100)).  end }).
 % grisplite_generic_tasks_server:add_task({task4, all, fun () -> lists:foreach(fun(E) -> timer:sleep(10000), lasp:update(grisplite_util:atom_to_lasp_identifier(measures,state_orset), {add, {node(), pmod_als:raw()}}, self()) end, lists:seq(1, 100))  end }).
+% grisplite_generic_tasks_worker:start_task(task1).
 % grisplite_generic_tasks_worker:start_task(task4).
 % lasp:query(grisplite_util:atom_to_lasp_identifier(tasks,state_orset)).
 % lasp:query(grisplite_util:atom_to_lasp_identifier(set,state_orset)).
@@ -112,8 +116,17 @@ start_primary_workers(Workers) ->
 % Identifier3 = grisplite_util:atom_to_lasp_identifier(grisplite@my_grisp_board_3, state_orset).
 % {ok, Set2} = lasp:query(Identifier).
 % {ok, Set3} = lasp:query(Identifier3).
+% {ok, Set3} = lasp:query(grisplite_util:atom_to_lasp_identifier(node(), state_orset)).
 % L = sets:to_list(Set2).
 % list_to_integer(L).
 % list_to_integer(L, 16).
 
 % lists:foreach(fun(E) -> timer:sleep(10000) lasp:update(atom_to_lasp_identifier(measures,state_orset), {add, {node(), pmod_als:raw()}}, self()) end, lists:seq(1, 100)).
+
+
+% grisplite_util:call(7,lasp,query,[{<<"grisplite@my_grisp_board_7">>,state_orset}]).
+% grisplite_util:call(7,lasp,query,[{<<"grisplite@my_grisp_board_3">>,state_orset}]).
+% lasp:query({<<"tasks">>,state_orset}).
+% lasp:query({<<"grisplite@my_grisp_board_3">>,state_orset}).
+
+% 12:59:00 --> erlang:memory() = 21MB, processes = 6MB

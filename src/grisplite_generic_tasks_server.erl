@@ -5,23 +5,26 @@
 -include_lib("grisplite.hrl").
 
 %% API
--export([start_link/0,
-  terminate/0,
-  add_task/1,
-  remove_all_tasks/0,
-  remove_task/1,
-  get_all_tasks/0,
-  find_task/1]).
+-export([start_link/0]).
+-export([terminate/0]).
+-export([add_task/1]).
+-export([add_permatask/1]).
+-export([remove_all_tasks/0]).
+-export([remove_task/1]).
+-export([get_all_tasks/0]).
+-export([find_task/1]).
 
 %% Gen Server Callbacks
--export([init/1,
-  handle_call/3,
-  handle_cast/2,
-  handle_info/2,
-  terminate/2,
-  code_change/3]).
+-export([init/1]).
+-export([handle_call/3]).
+-export([handle_cast/2]).
+-export([handle_info/2]).
+-export([terminate/2]).
+-export([code_change/3]).
+
 
 %% Records
+-record(state, {lasp_identifiers = []}).
 
 
 %% ===================================================================
@@ -33,6 +36,8 @@ start_link() -> gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 terminate() -> gen_server:call(?MODULE, {terminate}).
 
 add_task(Task) -> gen_server:call(?MODULE, {add_task, Task}).
+
+add_permatask(Task) -> gen_server:call(?MODULE, {add_permatask, Task}).
 
 remove_task(Name) -> gen_server:call(?MODULE, {remove_task, Name}).
 
@@ -51,9 +56,10 @@ init([]) ->
   logger:log(info, "Starting a generic tasks server ~n"),
   %% Ensure Gen Server gets notified when his supervisor dies
   Vars = grisplite_config:get(generic_tasks_sets_names, []),
+  LaspIdentifiers = [ grisplite_util:atom_to_lasp_identifier(X, state_orset) || X <- Vars ],
   grisplite_util:declare_crdts(Vars),
   process_flag(trap_exit, true),
-  {ok, {}}.
+  {ok, #state{lasp_identifiers = LaspIdentifiers}}.
 
 % TODO: add infinite execution of a task
 handle_call({add_task, {TaskName, Targets, Fun}}, _From, State) ->
@@ -68,6 +74,21 @@ handle_call({add_task, {TaskName, Targets, Fun}}, _From, State) ->
       {reply, {ko, task_already_exist}, State};
     0 ->
       lasp:update({<<"tasks">>, state_orset}, {add, Task}, self()),
+      {reply, ok, State}
+  end;
+
+handle_call({add_permatask, {TaskName, Targets, Fun}}, _From, State) ->
+  logger:log(info, "=== [PERMANENT] ~p ~p ~p ===~n", [TaskName, Targets, Fun]),
+  Task = {TaskName, Targets, Fun},
+  {ok, Tasks} = lasp:query({<<"permatasks">>, state_orset}),
+  TasksList = sets:to_list(Tasks),
+  TaskExists = [{Name, Targets, Fun} || {Name, Targets, Fun} <- TasksList, Name =:= TaskName],
+  case length(TaskExists) of
+    1 ->
+      logger:log(info, "=== Error, task already exists ==="),
+      {reply, {ko, task_already_exist}, State};
+    0 ->
+      lasp:update({<<"permatasks">>, state_orset}, {add, Task}, self()),
       {reply, ok, State}
   end;
 
